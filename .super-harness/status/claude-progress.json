@@ -1,9 +1,9 @@
 {
   "project": "Linklet",
   "created_at": "2026-04-27T18:00:53Z",
-  "updated_at": "2026-04-27T19:19:44Z",
+  "updated_at": "2026-04-27T19:21:21Z",
   "spec_file": ".super-harness/specs/2026-04-27-charm-diy-design.md",
-  "current_session_handoff": null,
+  "current_session_handoff": ".super-harness/handoffs/handoff.md",
   "version_branch": null,
   "worktree": null,
   "milestones": [
