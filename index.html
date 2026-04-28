@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Charm DIY</title>
+
+  <!-- matter-js physics engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+  <!-- poly-decomp — convex decomposition library for complex polygon bodies -->
+  <script src="https://cdn.jsdelivr.net/npm/poly-decomp@0.3.0/build/poly-decomp.min.js"></script>
+
+  <!-- App stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- Left: physics canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Right: sidebar -->
+    <aside id="sidebar">
+      <div id="sidebar-content">
+        <!-- Populated by Sidebar.loadManifest() -->
+      </div>
+      <div id="upload-container">
+        <!-- Populated by UploadUI -->
+      </div>
+    </aside>
+
+  </div><!-- /#app -->
+
+  <!-- Toolbar: floating over the canvas area -->
+  <div id="toolbar">
+    <button id="delete-btn" type="button">Delete Selected</button>
+  </div>
+
+  <!-- App entry point (ES module) -->
+  <script type="module" src="src/app.js"></script>
+
+</body>
+</html>

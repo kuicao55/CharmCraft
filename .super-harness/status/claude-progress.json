@@ -19,7 +19,10 @@
       "spec_file": ".super-harness/specs/2026-04-27-charm-diy-design.md",
       "plan_file": ".super-harness/plans/2026-04-27-milestone-1.md",
       "session_date": "2026-04-27T19:19:44Z",
-      "notes": null
+      "notes": null,
+      "tasks_completed": [
+        "Task 1: PngToBody"
+      ]
     }
   ]
 }
