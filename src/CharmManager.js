@@ -107,6 +107,9 @@ export class CharmManager {
    */
   reconnectAllConstraints() {
     for (const constraint of this._constraints) {
+      // Skip constraints that are actively being dragged
+      if (constraint.isDragging) continue;
+
       // Remove old constraint from world
       Matter.Composite.remove(this.scene.engine.world, constraint);
 
