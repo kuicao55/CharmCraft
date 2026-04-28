@@ -1,0 +1,17 @@
+{
+  "rings": [
+    {
+      "id": "ring1",
+      "file": "rings/ring1.png",
+      "radius": 40
+    }
+  ],
+  "charms": [
+    {
+      "id": "star",
+      "file": "charms/star.png",
+      "scale": 0.5,
+      "density": 0.001
+    }
+  ]
+}
