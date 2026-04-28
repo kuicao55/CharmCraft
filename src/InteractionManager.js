@@ -124,9 +124,11 @@ export class InteractionManager {
       this._draggedConstraint = null;
     });
 
-    // --- keydown: Delete key removes selected charm ---
+    // --- keydown: Delete key removes selected charm (skip when typing in input fields) ---
     window.addEventListener('keydown', (event) => {
       if (event.key === 'Delete' || event.key === 'Backspace') {
+        const tag = event.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
         this._deleteSelected();
       }
     });

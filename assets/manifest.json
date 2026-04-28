@@ -1,8 +1,9 @@
 {
   "rings": [
     {
-      "id": "ring1",
-      "file": "rings/ring1.png",
+      "id": "ring-circle",
+      "file": "rings/ring-circle.png",
+      "scale": 1,
       "radius": 40
     }
   ],
