@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhysicsScene + CharmManager Tests</title>
+  <style>
+    body { font-family: monospace; margin: 20px; background: #1a1a2e; color: #e0e0e0; }
+    .pass { color: #4caf50; }
+    .fail { color: #f44336; }
+    .summary { margin-top: 20px; font-size: 1.2em; padding: 10px; border: 1px solid #444; }
+    h1 { color: #bb86fc; }
+    #results { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>PhysicsScene + CharmManager Test Runner</h1>
+  <div id="results"></div>
+  <!-- Hidden canvas container for PhysicsScene -->
+  <div id="canvas-container" style="position: absolute; left: -9999px;"></div>
+
+  <!-- Dependencies loaded via CDN as global scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
+
+  <script type="module">
+    import { runAllTests } from './PhysicsScene.test.js';
+
+    const results = document.getElementById('results');
+    runAllTests(results);
+  </script>
+</body>
+</html>
