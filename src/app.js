@@ -1,5 +1,5 @@
 /**
- * app.js — Charm DIY SPA entry point
+ * app.js — CharmCraft SPA entry point
  *
  * Wires together all modules and bootstraps the application:
  *   - PhysicsScene  — physics world and rendering
@@ -37,14 +37,6 @@ async function init() {
   // --- Interaction manager ---
   const canvas = canvasContainer.querySelector('canvas');
   const interactionManager = new InteractionManager(scene, charmManager, canvas);
-
-  // --- Toolbar: delete button ---
-  const deleteBtn = document.getElementById('delete-btn');
-  if (deleteBtn) {
-    deleteBtn.addEventListener('click', () => {
-      interactionManager.deleteByToolbar();
-    });
-  }
 
   // --- Sidebar: ring/charm picker ---
   const sidebar = new Sidebar(document.getElementById('sidebar'), {
@@ -85,7 +77,7 @@ async function init() {
 
       img.onload = () => {
         const scale = charmEntry.scale || 1.0;
-        const density = charmEntry.density ?? 0.001;
+        const density = charmEntry.density ?? 0.005;
 
         // Offscreen canvas for pixel reading
         const offscreen = document.createElement('canvas');
@@ -93,6 +85,9 @@ async function init() {
         offscreen.height = img.naturalHeight;
         const ctx = offscreen.getContext('2d');
         ctx.drawImage(img, 0, 0);
+
+        // Detect the attachment point (top of charm/loop) so constraint hangs correctly
+        const attachPoint = PngToBody.findTopAttachPoint(ctx, img.naturalWidth, img.naturalHeight);
 
         // Create physics body from PNG contour
         const body = PngToBody.createBody(
@@ -105,6 +100,7 @@ async function init() {
             scale,
             density,
             texturePath: `${SERVER_URL}/${charmEntry.file}`,
+            attachPoint,
           }
         );
 

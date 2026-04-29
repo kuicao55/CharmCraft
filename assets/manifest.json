@@ -2,17 +2,52 @@
   "rings": [
     {
       "id": "ring-circle",
-      "file": "rings/ring-circle.png",
+      "file": "assets/rings/ring-circle.png",
       "scale": 1,
       "radius": 40
+    },
+    {
+      "id": "MBAE",
+      "file": "assets/rings/MBAE.png",
+      "radius": 25
     }
   ],
   "charms": [
     {
       "id": "star",
-      "file": "charms/star.png",
-      "scale": 0.5,
-      "density": 0.001
+      "file": "assets/charms/star.png",
+      "scale": 0.25,
+      "density": 0.005
+    },
+    {
+      "id": "NBAC",
+      "file": "assets/charms/NBAC.png",
+      "scale": 0.25,
+      "density": 0.005
+    },
+    {
+      "id": "NWSE",
+      "file": "assets/charms/NWSE.png",
+      "scale": 0.25,
+      "density": 0.005
+    },
+    {
+      "id": "NWAC",
+      "file": "assets/charms/NWAC.png",
+      "scale": 0.25,
+      "density": 0.005
+    },
+    {
+      "id": "CWSC",
+      "file": "assets/charms/CWSC.png",
+      "density": 0.001,
+      "scale": 0.25
+    },
+    {
+      "id": "NOAE",
+      "file": "assets/charms/NOAE.png",
+      "density": 0.001,
+      "scale": 0.25
     }
   ]
 }

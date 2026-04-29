@@ -57,12 +57,15 @@ export class CharmManager {
     this.scene.addBody(body);
 
     // Create constraint from ring to charm body
+    // Use body._attachPoint if available (detected top of charm for correct hanging)
+    const attachPoint = body._attachPoint || { x: 0, y: 0 };
     const constraint = Matter.Constraint.create({
       bodyA: this.scene.ring,
       bodyB: body,
+      pointB: attachPoint,
       length: constraintLength,
-      stiffness: 0.9,
-      damping: 0.1,
+      stiffness: 1.0,
+      damping: 0.5,
     });
 
     // Add constraint to world
@@ -91,8 +94,11 @@ export class CharmManager {
 
     const constraint = this._constraints[constraintIndex];
 
-    // Remove constraint from world
-    Matter.Composite.remove(this.scene.engine.world, constraint);
+    // Remove constraint from world (no-op if it was already removed, e.g. during drag)
+    const alreadyInWorld = Matter.Composite.get(this.scene.engine.world, constraint.id, 'constraint');
+    if (alreadyInWorld) {
+      Matter.Composite.remove(this.scene.engine.world, constraint);
+    }
 
     // Remove body from world
     Matter.Composite.remove(this.scene.engine.world, constraint.bodyB);

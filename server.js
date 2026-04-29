@@ -1,5 +1,5 @@
 /**
- * server.js — Node.js dev server for Charm DIY web page
+ * server.js — Node.js dev server for CharmCraft
  *
  * Features:
  * - Static file hosting (index.html, JS, CSS, images)
@@ -94,7 +94,7 @@ function serveStatic(req, res) {
     return;
   }
 
-  // Strip leading slash and ../ before joining to prevent path traversal
+// Strip leading slash and ../ before joining to prevent path traversal
   let safePath = filePath.slice(1);        // remove leading /
   safePath = safePath.replace(/\.\.\//g, '');  // remove ../
   safePath = safePath.replace(/^\//, '');       // remove any remaining leading slash

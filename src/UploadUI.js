@@ -402,13 +402,38 @@ export class UploadUI {
     radiusRow.appendChild(radiusLabel);
     radiusRow.appendChild(radiusInput);
 
+    // Scale field (for charms)
+    const scaleRow = document.createElement('div');
+    scaleRow.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+
+    const scaleLabel = document.createElement('label');
+    scaleLabel.textContent = 'Scale';
+    scaleLabel.style.cssText = 'font-size: 14px; font-weight: 500;';
+
+    const scaleInput = document.createElement('input');
+    scaleInput.type = 'number';
+    scaleInput.value = '0.25';
+    scaleInput.step = '0.1';
+    scaleInput.min = '0.1';
+    scaleInput.style.cssText = `
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    `;
+
+    scaleRow.appendChild(scaleLabel);
+    scaleRow.appendChild(scaleInput);
+
     // Update field visibility based on category
     const updateFieldVisibility = () => {
       if (catSelect.value === 'charms') {
         densityRow.style.display = 'flex';
+        scaleRow.style.display = 'flex';
         radiusRow.style.display = 'none';
       } else {
         densityRow.style.display = 'none';
+        scaleRow.style.display = 'none';
         radiusRow.style.display = 'flex';
       }
     };
@@ -450,6 +475,7 @@ export class UploadUI {
       const id = idInput.value.trim();
       const category = catSelect.value;
       const density = parseFloat(densityInput.value) || 0.001;
+      const scale = parseFloat(scaleInput.value) || 0.5;
       const radius = parseFloat(radiusInput.value) || 25;
 
       if (!id) {
@@ -463,7 +489,7 @@ export class UploadUI {
       cancelBtn.disabled = true;
 
       try {
-        await this._uploadFile(file, id, category, density, radius);
+        await this._uploadFile(file, id, category, density, scale, radius);
         this._closePreviewDialog();
         this._showToast('Upload successful', 'success');
 
@@ -472,7 +498,7 @@ export class UploadUI {
           const entry = {
             id,
             file: `${category}/${id}.png`,
-            ...(category === 'charms' ? { density } : { radius })
+            ...(category === 'charms' ? { density, scale } : { radius })
           };
           this.onUpload(entry);
         }
@@ -493,6 +519,7 @@ export class UploadUI {
     form.appendChild(catLabel);
     form.appendChild(catSelect);
     form.appendChild(densityRow);
+    form.appendChild(scaleRow);
     form.appendChild(radiusRow);
     form.appendChild(buttonRow);
 
@@ -522,8 +549,16 @@ export class UploadUI {
    */
   _closePreviewDialog() {
     if (this._previewOverlay) {
-      document.body.removeChild(this._previewOverlay);
+      // Defer removal by 1 tick so that if _showPreviewDialog is called
+      // synchronously from a file input change event, the DOM state stays
+      // consistent until the new dialog is built.
+      const overlay = this._previewOverlay;
       this._previewOverlay = null;
+      setTimeout(() => {
+        if (overlay.parentNode) {
+          document.body.removeChild(overlay);
+        }
+      }, 0);
     }
     if (this._pendingImageUrl) {
       URL.revokeObjectURL(this._pendingImageUrl);
@@ -543,7 +578,7 @@ export class UploadUI {
    * @returns {Promise<Object>} — the manifest entry that was added
    * @private
    */
-  async _uploadFile(file, id, category, density, radius) {
+  async _uploadFile(file, id, category, density, scale, radius) {
     const filename = `${id}.png`;
 
     // Step 1: Upload the file
@@ -573,8 +608,8 @@ export class UploadUI {
     // Step 3: Add new entry to manifest
     const entry = {
       id,
-      file: `${category}/${filename}`,
-      ...(category === 'charms' ? { density } : { radius })
+      file: `assets/${category}/${filename}`,
+      ...(category === 'charms' ? { density, scale } : { radius })
     };
 
     if (category === 'charms') {
