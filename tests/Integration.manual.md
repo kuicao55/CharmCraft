@@ -1,6 +1,6 @@
 # Integration Verification Checklist
 
-Use this checklist to verify the end-to-end behaviour of the Charm DIY web page.
+Use this checklist to verify the end-to-end behaviour of the CharmCraft web page.
 
 **Prerequisites:** Run `node server.js` from the project root, then open
 `http://localhost:3000` in a browser.

@@ -132,6 +132,22 @@ export class InteractionManager {
         this._deleteSelected();
       }
     });
+
+    // --- drag-outside-delete: remove charm when dragged off canvas ---
+    this.canvas.addEventListener('mouseleave', () => {
+      if (!this._draggedConstraint) return;
+      const bodyId = this._draggedConstraint.bodyB.id;
+      const body = Matter.Composite.get(this.scene.engine.world, bodyId, 'body');
+      if (body) {
+        // Break the draggedConstraint reference so enddrag won't re-add
+        this._draggedConstraint = null;
+        // Remove body (constraint will be orphaned and also removed by CharmManager)
+        Matter.Composite.remove(this.scene.engine.world, body);
+        // Also remove from charmManager's tracking
+        this.charmManager.removeCharm(bodyId);
+        this.selectedCharm = null;
+      }
+    });
   }
 
   /**

@@ -42,40 +42,13 @@ export class PngToBody {
       }
     }
 
-    // Each pixel is a cell. The cell at (x, y) has four corners:
-    //   TL = pixel (x, y),  TR = pixel (x+1, y)
-    //   BL = pixel (x, y+1), BR = pixel (x+1, y+1)
-    // Pixels outside the grid are 0.
     function pixel(x, y) {
       if (x < 0 || x >= width || y < 0 || y >= height) return 0;
       return grid[y * width + x];
     }
 
-    // For each cell, compute the marching squares case and generate segments.
-    // Each segment connects two edge-crossing points.
-    //
-    // Edges of a cell (cx, cy):
-    //   Top:    between pixels (cx, cy) and (cx+1, cy)   — horizontal edge at y=cy
-    //   Right:  between pixels (cx+1, cy) and (cx+1, cy+1) — vertical edge at x=cx+1
-    //   Bottom: between pixels (cx, cy+1) and (cx+1, cy+1) — horizontal edge at y=cy+1
-    //   Left:   between pixels (cx, cy) and (cx, cy+1)   — vertical edge at x=cx
-    //
-    // Edge crossing point: midpoint of the edge in pixel coordinates.
-    //   Top:    (cx + 0.5, cy)
-    //   Right:  (cx + 1, cy + 0.5)
-    //   Bottom: (cx + 0.5, cy + 1)
-    //   Left:   (cx, cy + 0.5)
-    //
-    // Key: each edge is shared between two adjacent cells, and the midpoint
-    // coordinates are the SAME for both cells. So segments from adjacent
-    // cells that share an edge WILL have matching endpoint coordinates.
-    //
-    // Edge index: 0=top, 1=right, 2=bottom, 3=left
-
     const segments = [];
 
-    // Marching squares lookup: for each case (4-bit), list of [edge1, edge2] pairs
-    // Bit layout: TL=8, TR=4, BR=2, BL=1
     const EDGE_TABLE = [
       [],              // 0:  all outside
       [[3, 2]],        // 1:  BL
@@ -113,44 +86,23 @@ export class PngToBody {
     }
 
     if (segments.length === 0) return [];
-
-    // Chain segments into an ordered polygon
     return PngToBody._chainSegments(segments);
   }
 
-  /**
-   * Get the midpoint of a cell edge in pixel coordinates.
-   * @param {number} cx  cell x
-   * @param {number} cy  cell y
-   * @param {number} edge  0=top, 1=right, 2=bottom, 3=left
-   */
   static _edgeMidpoint(cx, cy, edge) {
     switch (edge) {
       case 0: return { x: cx + 0.5, y: cy };      // top
       case 1: return { x: cx + 1, y: cy + 0.5 };  // right
-      case 2: return { x: cx + 0.5, y: cy + 1 };  // bottom
+      case 2: return { x: cx + 0.5, y: cy + 1 }; // bottom
       case 3: return { x: cx, y: cy + 0.5 };      // left
     }
   }
 
-  /**
-   * Chain line segments into an ordered polygon.
-   * Each segment endpoint should match exactly one other segment's endpoint.
-   *
-   * When multiple disjoint contour chains exist (e.g. separate opaque regions),
-   * returns the chain enclosing the largest area (absolute value, since winding
-   * direction may vary). This implements the spec requirement: "take largest
-   * connected region only".
-   */
   static _chainSegments(segments) {
     if (segments.length === 0) return [];
 
-    // Build a spatial map: coordinate key -> list of {segIndex, endpoint}
-    // endpoint: 'start' or 'end'
     const map = new Map();
-
     function key(x, y) {
-      // Use integer arithmetic to avoid floating-point issues
       return (Math.round(x * 10)) + '_' + (Math.round(y * 10));
     }
 
@@ -167,7 +119,6 @@ export class PngToBody {
     const used = new Set();
     const chains = [];
 
-    // Build a chain starting from each unvisited segment
     for (let startIdx = 0; startIdx < segments.length; startIdx++) {
       if (used.has(startIdx)) continue;
 
@@ -176,47 +127,33 @@ export class PngToBody {
       points.push({ x: segments[startIdx].x1, y: segments[startIdx].y1 });
       points.push({ x: segments[startIdx].x2, y: segments[startIdx].y2 });
 
-      // Extend from the end of the chain
       let changed = true;
       while (changed) {
         changed = false;
         const lastPt = points[points.length - 1];
         const lastKey = key(lastPt.x, lastPt.y);
         const candidates = map.get(lastKey) || [];
-
         for (const c of candidates) {
           if (used.has(c.segIndex)) continue;
           const s = segments[c.segIndex];
           used.add(c.segIndex);
-
-          if (c.role === 'start') {
-            points.push({ x: s.x2, y: s.y2 });
-          } else {
-            points.push({ x: s.x1, y: s.y1 });
-          }
+          points.push(c.role === 'start' ? { x: s.x2, y: s.y2 } : { x: s.x1, y: s.y1 });
           changed = true;
           break;
         }
       }
 
-      // Also extend from the front of the chain
       changed = true;
       while (changed) {
         changed = false;
         const firstPt = points[0];
         const firstKey = key(firstPt.x, firstPt.y);
         const candidates = map.get(firstKey) || [];
-
         for (const c of candidates) {
           if (used.has(c.segIndex)) continue;
           const s = segments[c.segIndex];
           used.add(c.segIndex);
-
-          if (c.role === 'start') {
-            points.unshift({ x: s.x2, y: s.y2 });
-          } else {
-            points.unshift({ x: s.x1, y: s.y1 });
-          }
+          points.unshift(c.role === 'start' ? { x: s.x2, y: s.y2 } : { x: s.x1, y: s.y1 });
           changed = true;
           break;
         }
@@ -225,10 +162,8 @@ export class PngToBody {
       chains.push(points);
     }
 
-    // If only one chain, return it directly
     if (chains.length === 1) return chains[0];
 
-    // Return the chain with the largest enclosed area (absolute value)
     let bestChain = chains[0];
     let bestArea = Math.abs(PngToBody._shoelaceArea(chains[0]));
     for (let i = 1; i < chains.length; i++) {
@@ -241,12 +176,6 @@ export class PngToBody {
     return bestChain;
   }
 
-  /**
-   * Compute the signed area of a polygon using the shoelace formula.
-   * Positive = counter-clockwise, negative = clockwise.
-   * @param {Array<{x:number,y:number}>} points
-   * @returns {number} signed area
-   */
   static _shoelaceArea(points) {
     let area = 0;
     const n = points.length;
@@ -258,20 +187,10 @@ export class PngToBody {
     return area / 2;
   }
 
-  /**
-   * Ramer-Douglas-Peucker polygon simplification.
-   * @param {Array<{x:number,y:number}>} points — input polygon points
-   * @param {number} epsilon — simplification tolerance
-   * @returns {Array<{x:number,y:number}>} simplified polygon
-   */
   static simplifyPolygon(points, epsilon = 1.0) {
     if (points.length === 0) return [];
     if (points.length <= 3) return points.slice();
 
-    // Detect and strip duplicate closing point before RDP.
-    // When the last point equals (or is very close to) the first,
-    // passing the closed contour directly into RDP causes degenerate
-    // distance calculations because first === last, collapsing the polygon.
     const EPS_SQ = 1e-10;
     let closed = false;
     let workPoints = points;
@@ -288,17 +207,12 @@ export class PngToBody {
 
     const simplified = PngToBody._rdp(workPoints, epsilon);
 
-    // Re-close the polygon if the input was closed
     if (closed && simplified.length > 0) {
       simplified.push({ x: simplified[0].x, y: simplified[0].y });
     }
-
     return simplified;
   }
 
-  /**
-   * Recursive RDP implementation.
-   */
   static _rdp(points, epsilon) {
     if (points.length <= 2) return points.slice();
 
@@ -325,9 +239,6 @@ export class PngToBody {
     }
   }
 
-  /**
-   * Perpendicular distance from point p to line segment a-b.
-   */
   static _perpendicularDistance(p, a, b) {
     const dx = b.x - a.x;
     const dy = b.y - a.y;
@@ -353,7 +264,7 @@ export class PngToBody {
    * @param {CanvasRenderingContext2D} ctx  — source canvas context
    * @param {number} width   — canvas width
    * @param {number} height  — canvas height
-   * @param {Object} options — { x, y, scale, density, texturePath, fallbackWidth, fallbackHeight }
+   * @param {Object} options — { x, y, scale, density, texturePath, fallbackWidth, fallbackHeight, attachPoint }
    * @returns {Matter.Body} matter.js body
    */
   static createBody(ctx, width, height, options = {}) {
@@ -365,9 +276,9 @@ export class PngToBody {
       texturePath = null,
       fallbackWidth = 64,
       fallbackHeight = 64,
+      attachPoint = null,
     } = options;
 
-    // Ensure poly-decomp is registered with matter.js
     if (typeof decomp !== 'undefined') {
       Matter.Common.setDecomp(decomp);
     }
@@ -377,18 +288,20 @@ export class PngToBody {
     if (body) {
       if (texturePath) {
         body.render.sprite.texture = texturePath;
+        body.render.sprite.xScale = scale;
+        body.render.sprite.yScale = scale;
+      }
+      // Store attach point on body for CharmManager to use
+      if (attachPoint) {
+        body._attachPoint = { x: attachPoint.x * scale, y: attachPoint.y * scale };
       }
       return body;
     }
 
     // Fallback: bounding box rectangle
-    return PngToBody._createFallback(x, y, fallbackWidth, fallbackHeight, scale, density, texturePath);
+    return PngToBody._createFallback(x, y, fallbackWidth, fallbackHeight, scale, density, texturePath, attachPoint);
   }
 
-  /**
-   * Attempt to create a body from contour extraction + convex decomposition.
-   * Returns null on failure.
-   */
   static _tryCreateFromContour(ctx, width, height, x, y, scale, density) {
     try {
       const contour = PngToBody.extractContour(ctx, width, height, 128);
@@ -397,14 +310,9 @@ export class PngToBody {
       const simplified = PngToBody.simplifyPolygon(contour, 1.0);
       if (simplified.length < 3) return null;
 
-      // Scale and convert to matter.js vertex format
       let vertices = simplified.map(p => ({ x: p.x * scale, y: p.y * scale }));
 
-      // Strip the duplicate closing vertex if the simplified contour is closed
-      // (last point equals first point). simplifyPolygon re-closes a closed
-      // contour by appending the first point at the end, but poly-decomp can
-      // reject closed polygons passed to Matter.Bodies.fromVertices.
-      // Check BEFORE calling fromVertices so we pass an open polygon.
+      // Strip duplicate closing vertex if present
       if (vertices.length >= 2) {
         const first = vertices[0];
         const last = vertices[vertices.length - 1];
@@ -416,26 +324,76 @@ export class PngToBody {
         }
       }
 
-      const body = Matter.Bodies.fromVertices(x, y, vertices, {
-        density,
-      });
-
+      const body = Matter.Bodies.fromVertices(x, y, vertices, { density });
       if (!body) return null;
-
       return body;
     } catch (_e) {
       return null;
     }
   }
 
-  /**
-   * Create a fallback rectangular body.
-   */
-  static _createFallback(x, y, width, height, scale, density, texturePath) {
+  static _createFallback(x, y, width, height, scale, density, texturePath, attachPoint) {
     const body = Matter.Bodies.rectangle(x, y, width * scale, height * scale, { density });
     if (texturePath) {
       body.render.sprite.texture = texturePath;
+      body.render.sprite.xScale = scale;
+      body.render.sprite.yScale = scale;
+    }
+    if (attachPoint) {
+      body._attachPoint = { x: attachPoint.x * scale, y: attachPoint.y * scale };
     }
     return body;
+  }
+
+  /**
+   * Find the topmost opaque pixel in a PNG — the "attachment point" (loop/hook).
+   * Scans the top 25% of the image, finds the leftmost opaque pixel in the topmost
+   * row, and returns its position relative to the body center.
+   *
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} width
+   * @param {number} height
+   * @param {number} alphaThreshold
+   * @returns {{x:number, y:number}} attachment point relative to body center
+   */
+  static findTopAttachPoint(ctx, width, height, alphaThreshold = 128) {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const scanHeight = Math.floor(height * 0.25);
+
+    let topY = -1;
+    let topX = -1;
+
+    for (let y = 0; y < scanHeight; y++) {
+      for (let x = 0; x < width; x++) {
+        const a = data[(y * width + x) * 4 + 3];
+        if (a >= alphaThreshold) {
+          topY = y;
+          // Find leftmost opaque pixel at this y
+          for (let lx = 0; lx < width; lx++) {
+            const la = data[(y * width + lx) * 4 + 3];
+            if (la >= alphaThreshold) {
+              topX = lx;
+              break;
+            }
+          }
+          break;
+        }
+      }
+      if (topY !== -1) break;
+    }
+
+    if (topY === -1) {
+      // No opaque pixel in top 25% — use top-center as fallback
+      return { x: 0, y: -height / 2 };
+    }
+
+    // Convert from image coords to body-local coords (center at 0,0)
+    const cx = width / 2;
+    const cy = height / 2;
+    return {
+      x: topX - cx,
+      y: topY - cy,
+    };
   }
 }
